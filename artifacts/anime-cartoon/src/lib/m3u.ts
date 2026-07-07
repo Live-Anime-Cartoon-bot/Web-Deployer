@@ -16,8 +16,16 @@ const PINNED_CHANNELS: Channel[] = [
   {
     id: "pogo",
     name: "POGO",
-    logo: "https://jiotvimages.cdn.jio.com/dare_images/images/channel/1d47df5bb049d4e70d8d7301ef9666cb.png",
-    url: "https://ksrtech.fun/xtra.php/67125.m3u8",
+    logo: "https://static.wikia.nocookie.net/robotwars/images/1/1f/PogoTV.png/revision/latest?cb=20210927185053",
+    url: "https://line.sweetv.xyz/play/live.php?mac=00:1A:79:00:03:B2&stream=156128&extension=m3u8&play_token=9sBGXoBcMI",
+    category: "Cartoon",
+    group: "Cartoon",
+  },
+  {
+    id: "minimax",
+    name: "Minimax",
+    logo: "https://upload.wikimedia.org/wikipedia/en/e/e9/Minimax_%282021%29.webp",
+    url: "https://vodzong.mjunoon.tv:8087/streamtest/157-1M/chunks.m3u8",
     category: "Cartoon",
     group: "Cartoon",
   },
