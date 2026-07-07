@@ -1,0 +1,1 @@
+- [Anime Cartoon app architecture](anime-cartoon-arch.md) — React+Vite SPA at `/`, Express api-server at `/api`, Supabase backend, manual TanStack Router v1 route tree.
