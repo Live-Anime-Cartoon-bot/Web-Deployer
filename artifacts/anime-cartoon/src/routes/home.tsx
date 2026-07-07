@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Play, Bell, Wifi, Search } from "lucide-react";
+import { Play, Bell, Wifi, Search, Tv2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { fetchChannels, type Channel } from "@/lib/m3u";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +60,7 @@ export function HomePage() {
           <TrendingHero channel={trendingChannel} />
         ) : null}
 
+        <JioTVButton />
         <LiveButton count={channels.length} />
 
         {RAILS.map((r) => {
@@ -167,6 +168,29 @@ function TrendingHero({ channel }: { channel: Channel }) {
         </Link>
       </div>
     </section>
+  );
+}
+
+function JioTVButton() {
+  return (
+    <Link
+      to="/jiotv"
+      className="mt-3 flex items-center gap-3 rounded-2xl border border-brand/30 bg-surface p-3 transition hover:bg-surface-2"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full gradient-brand shadow-glow">
+        <Tv2 className="h-5 w-5 text-primary-foreground" />
+      </span>
+      <div className="flex-1">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          JioTV
+          <span className="rounded-full gradient-brand px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+            New
+          </span>
+        </div>
+        <div className="text-xs text-muted-foreground">500+ live channels · Hindi, English &amp; more</div>
+      </div>
+      <span className="text-sm font-semibold text-brand">Watch →</span>
+    </Link>
   );
 }
 

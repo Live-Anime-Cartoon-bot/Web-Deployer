@@ -16,6 +16,7 @@ import { VerifyPage } from "@/routes/verify-page";
 import { PostPage } from "@/routes/post";
 import { PageView } from "@/routes/page-view";
 import { AdminPage } from "@/routes/admin";
+import { JioTVPage } from "@/routes/jiotv";
 
 /* ─── Root route ─────────────────────────────────────────────── */
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -103,6 +104,12 @@ const adminRoute = createRoute({
   component: AdminPage,
 });
 
+const jiotvRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/jiotv",
+  component: JioTVPage,
+});
+
 /* ─── Router ─────────────────────────────────────────────────── */
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -114,6 +121,7 @@ const routeTree = rootRoute.addChildren([
   postRoute,
   pageViewRoute,
   adminRoute,
+  jiotvRoute,
 ]);
 
 export const router = createRouter({
