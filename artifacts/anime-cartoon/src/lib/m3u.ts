@@ -17,7 +17,7 @@ const PINNED_CHANNELS: Channel[] = [
     id: "pogo",
     name: "POGO",
     logo: "https://jiotvimages.cdn.jio.com/dare_images/images/channel/1d47df5bb049d4e70d8d7301ef9666cb.png",
-    url: "https://rkdy-xtream.vercel.app/api/live/stream?id=7220&token=rkdyiptv&key=rkdy",
+    url: "https://ksrtech.fun/xtra.php/67125.m3u8",
     category: "Cartoon",
     group: "Cartoon",
   },
