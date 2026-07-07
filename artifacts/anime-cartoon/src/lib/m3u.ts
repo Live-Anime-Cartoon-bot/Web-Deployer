@@ -30,6 +30,14 @@ const PINNED_CHANNELS: Channel[] = [
     group: "Cartoon",
   },
   {
+    id: "pogo-2",
+    name: "POGO 2",
+    logo: "https://yt3.googleusercontent.com/ytc/AIdro_mHnOf4LS2T4yeC5ru2K_NoAAMjXK6hW3bFKDCfvb1OzsM=s900-c-k-c0x00ffffff-no-rj",
+    url: "https://line.sweetv.xyz/play/live.php?mac=00:1A:79:00:03:B2&stream=156128&extension=m3u8&play_token=9sBGXoBcMI",
+    category: "Cartoon",
+    group: "Cartoon",
+  },
+  {
     id: "cartoon-network-pk",
     name: "Cartoon Network Pakistan",
     logo: "https://yt3.googleusercontent.com/uG9EngVHBNOX4OfWFr17sojyqZo_BHy2tW0_zeXxJHkDrHtyoax2yljfog_55-b0LEPWa_ELPQ=s160-c-k-c0x00ffffff-no-rj",
