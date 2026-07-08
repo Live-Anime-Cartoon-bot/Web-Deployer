@@ -2,12 +2,13 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Shield, LogOut, LayoutDashboard, FileText, FolderTree, Tags as TagsIcon,
-  File, Tv, MessageSquare, Plus, Trash2, Save, Loader2, Eye, EyeOff, Check, X,
+  File, Tv, Tv2, MessageSquare, Plus, Trash2, Save, Loader2, Eye, EyeOff, Check, X,
+  Phone, KeyRound, AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession, useRoles, slugify } from "@/lib/auth-hooks";
 
-type Section = "dashboard" | "posts" | "categories" | "tags" | "livetv" | "pages" | "comments";
+type Section = "dashboard" | "posts" | "categories" | "tags" | "livetv" | "pages" | "comments" | "jiotv";
 
 export function AdminPage() {
   const navigate = useNavigate();
@@ -56,6 +57,7 @@ export function AdminPage() {
     { id: "categories", label: "Categories", icon: <FolderTree className="h-4 w-4" />, group: "Content" },
     { id: "tags", label: "Tags", icon: <TagsIcon className="h-4 w-4" />, group: "Content" },
     { id: "livetv", label: "Live TV", icon: <Tv className="h-4 w-4" />, group: "Channels" },
+    { id: "jiotv", label: "JioTV Login", icon: <Tv2 className="h-4 w-4" />, group: "Channels" },
     { id: "pages", label: "Pages", icon: <File className="h-4 w-4" /> },
     { id: "comments", label: "Comments", icon: <MessageSquare className="h-4 w-4" /> },
   ];
@@ -72,6 +74,7 @@ export function AdminPage() {
       case "livetv": return <LiveTVSection />;
       case "pages": return <PagesSection />;
       case "comments": return <CommentsSection />;
+      case "jiotv": return <JioTVAdminSection />;
     }
   };
 
@@ -610,5 +613,189 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+/* ─── JioTV Admin Section ────────────────────────────────────── */
+function JioTVAdminSection() {
+  const [status, setStatus] = useState<"checking" | "logged-in" | "step1" | "step2">("checking");
+  const [mobile, setMobile] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    fetch("/api/jiotv/status")
+      .then((r) => r.json())
+      .then((d: { loggedIn: boolean }) => setStatus(d.loggedIn ? "logged-in" : "step1"))
+      .catch(() => setStatus("step1"));
+  }, []);
+
+  async function sendOtp() {
+    if (!/^\d{10}$/.test(mobile)) { setError("Enter a valid 10-digit mobile number"); return; }
+    setLoading(true); setError(""); setSuccess("");
+    try {
+      const r = await fetch("/api/jiotv/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile }),
+      });
+      const d = (await r.json()) as { ok?: boolean; error?: string };
+      if (d.ok) { setStatus("step2"); setSuccess("OTP sent to +91 " + mobile); }
+      else setError(d.error ?? "Failed to send OTP");
+    } catch { setError("Network error"); }
+    setLoading(false);
+  }
+
+  async function verifyOtp() {
+    if (!/^\d{4,6}$/.test(otp)) { setError("Enter the OTP received"); return; }
+    setLoading(true); setError(""); setSuccess("");
+    try {
+      const r = await fetch("/api/jiotv/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile, otp }),
+      });
+      const d = (await r.json()) as { ok?: boolean; error?: string };
+      if (d.ok) { setStatus("logged-in"); setSuccess("JioTV logged in! All users can now watch JioTV."); setOtp(""); }
+      else setError(d.error ?? "OTP verification failed");
+    } catch { setError("Network error"); }
+    setLoading(false);
+  }
+
+  async function logout() {
+    if (!confirm("This will disable JioTV for all users. Continue?")) return;
+    setLoading(true);
+    await fetch("/api/jiotv/logout", { method: "POST" });
+    setStatus("step1"); setMobile(""); setOtp(""); setSuccess(""); setLoading(false);
+  }
+
+  return (
+    <div className="max-w-md">
+      <div className="mb-6 flex items-center gap-3">
+        <span className="grid h-10 w-10 place-items-center rounded-xl gradient-brand shadow-glow">
+          <Tv2 className="h-5 w-5 text-white" />
+        </span>
+        <div>
+          <h2 className="text-xl font-bold">JioTV Login</h2>
+          <p className="text-xs text-muted-foreground">
+            Login once — all visitors can watch JioTV without signing in.
+          </p>
+        </div>
+      </div>
+
+      {status === "checking" && (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Checking status…
+        </div>
+      )}
+
+      {status === "logged-in" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 rounded-2xl border border-green-500/30 bg-green-500/10 p-4">
+            <Check className="h-5 w-5 shrink-0 text-green-400" />
+            <div>
+              <p className="text-sm font-semibold text-green-300">JioTV is Active</p>
+              <p className="text-xs text-muted-foreground">
+                All users can browse and watch JioTV channels.
+              </p>
+            </div>
+          </div>
+          {success && <p className="text-xs text-green-400">{success}</p>}
+          <button
+            onClick={logout}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-xs font-medium text-muted-foreground hover:text-destructive"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5" />}
+            Sign out of JioTV
+          </button>
+        </div>
+      )}
+
+      {(status === "step1" || status === "step2") && (
+        <div className="space-y-4 rounded-2xl border border-border bg-surface p-5">
+          <p className="text-xs text-muted-foreground">
+            Enter your Jio mobile number to receive an OTP and activate JioTV for all users.
+          </p>
+
+          {/* Mobile */}
+          <Field label="Jio Mobile Number">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
+              <span className="text-sm text-muted-foreground">+91</span>
+              <span className="h-4 w-px bg-border" />
+              <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                placeholder="10-digit number"
+                disabled={status === "step2"}
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:opacity-60"
+              />
+            </div>
+          </Field>
+
+          {status === "step1" && (
+            <button
+              onClick={sendOtp}
+              disabled={loading || mobile.length < 10}
+              className="w-full rounded-xl gradient-brand py-2.5 text-sm font-bold text-white shadow-glow disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Send OTP"}
+            </button>
+          )}
+
+          {status === "step2" && (
+            <>
+              <Field label="Enter OTP">
+                <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
+                  <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    autoFocus
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="OTP received on +91 mobile"
+                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  />
+                </div>
+              </Field>
+
+              <button
+                onClick={verifyOtp}
+                disabled={loading || otp.length < 4}
+                className="w-full rounded-xl gradient-brand py-2.5 text-sm font-bold text-white shadow-glow disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Activate JioTV"}
+              </button>
+
+              <button
+                onClick={() => { setStatus("step1"); setOtp(""); setError(""); setSuccess(""); }}
+                className="w-full text-xs text-muted-foreground hover:text-foreground"
+              >
+                ← Change number
+              </button>
+            </>
+          )}
+
+          {success && (
+            <div className="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-xs text-green-400">
+              <Check className="h-4 w-4 shrink-0" /> {success}
+            </div>
+          )}
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
