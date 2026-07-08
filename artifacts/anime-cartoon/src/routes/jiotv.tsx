@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { HlsPlayer } from "@/components/HlsPlayer";
 import { AppShell } from "@/components/AppShell";
+import { apiUrl } from "@/lib/api-base";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface JioChannel {
@@ -37,7 +38,7 @@ export function JioTVPage() {
   const [watchName, setWatchName] = useState("");
 
   useEffect(() => {
-    fetch("/api/jiotv/status")
+    fetch(apiUrl("/api/jiotv/status"))
       .then((r) => r.json())
       .then((d: { loggedIn: boolean }) => setState(d.loggedIn ? "channels" : "no-creds"))
       .catch(() => setState("no-creds"));
@@ -112,7 +113,7 @@ function JioTVChannels({
   const [cat, setCat] = useState("All");
 
   useEffect(() => {
-    fetch("/api/jiotv/channels")
+    fetch(apiUrl("/api/jiotv/channels"))
       .then((r) => r.json())
       .then((d: { channels?: JioChannel[]; error?: string }) => {
         if (d.error) setError(d.error);
@@ -295,7 +296,7 @@ function JioTVWatch({
       </header>
 
       <div className="mx-auto max-w-5xl px-3 pt-3">
-        <HlsPlayer src={`/api/jiotv/live/${encodeURIComponent(channelId)}`} />
+        <HlsPlayer src={apiUrl(`/api/jiotv/live/${encodeURIComponent(channelId)}`)} />
         <p className="mt-3 text-center text-xs text-muted-foreground">
           Streaming via JioTV · {channelName}
         </p>

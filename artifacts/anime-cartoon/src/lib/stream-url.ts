@@ -1,3 +1,5 @@
+import { apiUrl } from "./api-base";
+
 export function proxiedStreamUrl(url: string): string {
-  return `/api/public/stream?u=${encodeURIComponent(url)}`;
+  return `${apiUrl("/api/public/stream")}?u=${encodeURIComponent(url)}`;
 }

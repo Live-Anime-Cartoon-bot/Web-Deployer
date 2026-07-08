@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession, useRoles, slugify } from "@/lib/auth-hooks";
+import { apiUrl } from "@/lib/api-base";
 
 type Section = "dashboard" | "posts" | "categories" | "tags" | "livetv" | "pages" | "comments" | "jiotv" | "shrinkme";
 
@@ -630,7 +631,7 @@ function ShrinkmeSection() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/shrinkme")
+    fetch(apiUrl("/api/admin/shrinkme"))
       .then((r) => r.json())
       .then((d: { configured: boolean; hint: string | null }) => {
         setConfigured(d.configured);
@@ -644,7 +645,7 @@ function ShrinkmeSection() {
     if (!key.trim()) { setError("Enter the API key"); return; }
     setSaving(true); setError(""); setSuccess("");
     try {
-      const r = await fetch("/api/admin/shrinkme", {
+      const r = await fetch(apiUrl("/api/admin/shrinkme"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: key.trim() }),
@@ -662,7 +663,7 @@ function ShrinkmeSection() {
   async function remove() {
     if (!confirm("Remove the Shrinkme API key?")) return;
     setSaving(true);
-    await fetch("/api/admin/shrinkme", { method: "DELETE" });
+    await fetch(apiUrl("/api/admin/shrinkme"), { method: "DELETE" });
     setConfigured(false); setHint(null); setKey(""); setSuccess("Key removed."); setSaving(false);
   }
 
@@ -774,7 +775,7 @@ function JioTVAdminSection() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    fetch("/api/jiotv/status")
+    fetch(apiUrl("/api/jiotv/status"))
       .then((r) => r.json())
       .then((d: { loggedIn: boolean }) => setStatus(d.loggedIn ? "logged-in" : "step1"))
       .catch(() => setStatus("step1"));
@@ -784,7 +785,7 @@ function JioTVAdminSection() {
     if (!/^\d{10}$/.test(mobile)) { setError("Enter a valid 10-digit mobile number"); return; }
     setLoading(true); setError(""); setSuccess("");
     try {
-      const r = await fetch("/api/jiotv/otp/send", {
+      const r = await fetch(apiUrl("/api/jiotv/otp/send"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mobile }),
@@ -800,7 +801,7 @@ function JioTVAdminSection() {
     if (!/^\d{4,6}$/.test(otp)) { setError("Enter the OTP received"); return; }
     setLoading(true); setError(""); setSuccess("");
     try {
-      const r = await fetch("/api/jiotv/otp/verify", {
+      const r = await fetch(apiUrl("/api/jiotv/otp/verify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mobile, otp }),
@@ -815,7 +816,7 @@ function JioTVAdminSection() {
   async function logout() {
     if (!confirm("This will disable JioTV for all users. Continue?")) return;
     setLoading(true);
-    await fetch("/api/jiotv/logout", { method: "POST" });
+    await fetch(apiUrl("/api/jiotv/logout"), { method: "POST" });
     setStatus("step1"); setMobile(""); setOtp(""); setSuccess(""); setLoading(false);
   }
 

@@ -1,3 +1,5 @@
+import { apiUrl } from "@/lib/api-base";
+
 const STORAGE_KEY = "ac_token";
 const PENDING_KEY = "ac_pending";
 const VALIDITY_MS = 12 * 60 * 60 * 1000; // 12 hours
@@ -79,7 +81,7 @@ export async function startVerification(returnTo: string): Promise<void> {
 
   let shortUrl = destination;
   try {
-    const res = await fetch(`/api/public/shorten?url=${encodeURIComponent(destination)}`);
+    const res = await fetch(`${apiUrl("/api/public/shorten")}?url=${encodeURIComponent(destination)}`);
     const data = (await res.json()) as { short?: string };
     if (data.short) {
       shortUrl = validateShortUrl(data.short, destination);
