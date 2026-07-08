@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import {
   Shield, LogOut, LayoutDashboard, FileText, FolderTree, Tags as TagsIcon,
   File, Tv, Tv2, MessageSquare, Plus, Trash2, Save, Loader2, Eye, EyeOff, Check, X,
-  Phone, KeyRound, AlertCircle,
+  Phone, KeyRound, AlertCircle, Link2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession, useRoles, slugify } from "@/lib/auth-hooks";
 
-type Section = "dashboard" | "posts" | "categories" | "tags" | "livetv" | "pages" | "comments" | "jiotv";
+type Section = "dashboard" | "posts" | "categories" | "tags" | "livetv" | "pages" | "comments" | "jiotv" | "shrinkme";
 
 export function AdminPage() {
   const navigate = useNavigate();
@@ -58,6 +58,7 @@ export function AdminPage() {
     { id: "tags", label: "Tags", icon: <TagsIcon className="h-4 w-4" />, group: "Content" },
     { id: "livetv", label: "Live TV", icon: <Tv className="h-4 w-4" />, group: "Channels" },
     { id: "jiotv", label: "JioTV Login", icon: <Tv2 className="h-4 w-4" />, group: "Channels" },
+    { id: "shrinkme", label: "Shrinkme Key", icon: <Link2 className="h-4 w-4" />, group: "Settings" },
     { id: "pages", label: "Pages", icon: <File className="h-4 w-4" /> },
     { id: "comments", label: "Comments", icon: <MessageSquare className="h-4 w-4" /> },
   ];
@@ -75,6 +76,7 @@ export function AdminPage() {
       case "pages": return <PagesSection />;
       case "comments": return <CommentsSection />;
       case "jiotv": return <JioTVAdminSection />;
+      case "shrinkme": return <ShrinkmeSection />;
     }
   };
 
@@ -613,6 +615,152 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
     </label>
+  );
+}
+
+/* ─── Shrinkme API Key Section ───────────────────────────────── */
+function ShrinkmeSection() {
+  const [configured, setConfigured] = useState(false);
+  const [hint, setHint] = useState<string | null>(null);
+  const [key, setKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/shrinkme")
+      .then((r) => r.json())
+      .then((d: { configured: boolean; hint: string | null }) => {
+        setConfigured(d.configured);
+        setHint(d.hint);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  async function save() {
+    if (!key.trim()) { setError("Enter the API key"); return; }
+    setSaving(true); setError(""); setSuccess("");
+    try {
+      const r = await fetch("/api/admin/shrinkme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: key.trim() }),
+      });
+      const d = (await r.json()) as { ok?: boolean; error?: string };
+      if (d.ok) {
+        setConfigured(true);
+        setHint(`${key.trim().slice(0, 4)}${"•".repeat(Math.max(0, key.trim().length - 4))}`);
+        setKey(""); setSuccess("API key saved successfully.");
+      } else setError(d.error ?? "Failed to save");
+    } catch { setError("Network error"); }
+    setSaving(false);
+  }
+
+  async function remove() {
+    if (!confirm("Remove the Shrinkme API key?")) return;
+    setSaving(true);
+    await fetch("/api/admin/shrinkme", { method: "DELETE" });
+    setConfigured(false); setHint(null); setKey(""); setSuccess("Key removed."); setSaving(false);
+  }
+
+  return (
+    <div className="max-w-md">
+      <div className="mb-6 flex items-center gap-3">
+        <span className="grid h-10 w-10 place-items-center rounded-xl gradient-brand shadow-glow">
+          <Link2 className="h-5 w-5 text-white" />
+        </span>
+        <div>
+          <h2 className="text-xl font-bold">Shrinkme API Key</h2>
+          <p className="text-xs text-muted-foreground">
+            Used to shorten verify links. Works without it — links just won't be shortened.
+          </p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        </div>
+      ) : (
+        <div className="space-y-4 rounded-2xl border border-border bg-surface p-5">
+          {configured && hint && (
+            <div className="flex items-center gap-3 rounded-xl border border-green-500/30 bg-green-500/10 p-3">
+              <Check className="h-4 w-4 shrink-0 text-green-400" />
+              <div>
+                <p className="text-sm font-semibold text-green-300">Key configured</p>
+                <p className="font-mono text-xs text-muted-foreground">{hint}</p>
+              </div>
+            </div>
+          )}
+
+          <Field label="API Key">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
+              <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <input
+                type={showKey ? "text" : "password"}
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder={configured ? "Enter new key to replace…" : "Paste your Shrinkme API key"}
+                className="flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted-foreground placeholder:font-sans"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKey((v) => !v)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </Field>
+
+          <p className="text-[11px] text-muted-foreground">
+            Get your key at{" "}
+            <a
+              href="https://shrinkme.io/member/tools/api"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand underline-offset-2 hover:underline"
+            >
+              shrinkme.io → API
+            </a>
+          </p>
+
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-xs text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+            </div>
+          )}
+          {success && (
+            <div className="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-xs text-green-400">
+              <Check className="h-4 w-4 shrink-0" /> {success}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={save}
+              disabled={saving || !key.trim()}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl gradient-brand py-2.5 text-sm font-bold text-white shadow-glow disabled:opacity-60"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Save Key
+            </button>
+            {configured && (
+              <button
+                onClick={remove}
+                disabled={saving}
+                className="flex items-center gap-1.5 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/20"
+              >
+                <Trash2 className="h-4 w-4" /> Remove
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

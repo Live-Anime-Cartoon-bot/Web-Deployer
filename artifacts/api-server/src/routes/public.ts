@@ -1,8 +1,41 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { isIP } from "net";
 import dns from "dns/promises";
+import fs from "fs";
+import path from "path";
 
 const router: IRouter = Router();
+
+// ─── Shrinkme key storage (admin-configurable) ────────────────────────────────
+const SHRINKME_FILE = path.join("/tmp", "shrinkme-key.txt");
+
+export function readShrinkmeKey(): string | null {
+  try {
+    if (!fs.existsSync(SHRINKME_FILE)) return null;
+    const key = fs.readFileSync(SHRINKME_FILE, "utf-8").trim();
+    return key || null;
+  } catch { return null; }
+}
+
+// GET /api/admin/shrinkme — returns whether a key is saved (not the key itself)
+router.get("/admin/shrinkme", (_req, res) => {
+  const key = readShrinkmeKey();
+  res.json({ configured: !!key, hint: key ? `${key.slice(0, 4)}${"•".repeat(Math.max(0, key.length - 4))}` : null });
+});
+
+// POST /api/admin/shrinkme — save key
+router.post("/admin/shrinkme", (req, res) => {
+  const { key } = req.body as { key?: string };
+  if (!key || !key.trim()) { res.status(400).json({ error: "key is required" }); return; }
+  fs.writeFileSync(SHRINKME_FILE, key.trim());
+  res.json({ ok: true });
+});
+
+// DELETE /api/admin/shrinkme — clear key
+router.delete("/admin/shrinkme", (_req, res) => {
+  try { fs.unlinkSync(SHRINKME_FILE); } catch { /* ok */ }
+  res.json({ ok: true });
+});
 
 const PROXY_PATH = "/api/public/stream";
 
@@ -217,7 +250,8 @@ router.get("/public/shorten", async (req, res) => {
     return;
   }
 
-  const apiToken = process.env.SHRINKME_API_TOKEN;
+  // Prefer key saved by admin panel, fall back to env var
+  const apiToken = readShrinkmeKey() || process.env.SHRINKME_API_TOKEN;
   if (!apiToken) {
     // No token configured — return the original URL unchanged
     res.json({ short: url });
