@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @workspace/anime-cartoon run build",
+  "outputDirectory": "artifacts/anime-cartoon/dist/public",
+  "framework": null,
+  "rewrites": [
+    { "source": "/live", "destination": "/index.html" },
+    { "source": "/watch/:id", "destination": "/index.html" },
+    { "source": "/search", "destination": "/index.html" },
+    { "source": "/auth", "destination": "/index.html" },
+    { "source": "/verify", "destination": "/index.html" },
+    { "source": "/posts/:slug", "destination": "/index.html" },
+    { "source": "/pages/:slug", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/jiotv", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+}
